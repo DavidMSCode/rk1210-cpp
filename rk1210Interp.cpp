@@ -1,0 +1,517 @@
+//
+//  Test program for the RK12(10) Method (Feagin, 2006)  
+//
+//#include "stdafx.h"   //  Only for Microsoft Visual C++
+#include "stdio.h" //  For most other C compilers
+#include "math.h"
+#define EPS  1.0e-14  //  Epsilon, a nearly zero value   (a machine dependent constant)
+//  If your problem has more than 10 differential equations, then you will need to increase 
+//  MAXEQNS to be as great or greater than that number
+#define MAXEQNS 10    //  The maximum number of differential equations   (a constant)
+//  The global variables are:
+int nfe = 0;          //  The total number of function evaluations 
+int rstep = 0;        //  The total number of rejected steps
+double hold, told, xold[MAXEQNS]; //  The old h, t, and x valueshold
+//  The v1[] ... v7[] arrays store the terms used to interpolate the intermediate solution values
+double v1[MAXEQNS], v2[MAXEQNS], v3[MAXEQNS], v4[MAXEQNS], v5[MAXEQNS], v6[MAXEQNS], v7[MAXEQNS];
+//  The following derivative function evaluations are needed for the interpolation as well
+double f0[MAXEQNS], f12[MAXEQNS], f13[MAXEQNS], f14[MAXEQNS], f15[MAXEQNS], f16[MAXEQNS], f24[MAXEQNS];
+int    neqns; // The number of differential equations being integrated
+//  End of global variables
+
+void deriv(double x[], double t, double f[]) {
+//  The derivatives are defined in this procedure (see "rk1210" procedure below for more information)
+//  The code below is for the 2D two-body problem
+	double r3;
+	r3 = sqrt(x[0] * x[0] + x[2] * x[2]);
+	r3 = r3 * r3 * r3;
+	f[0] = x[1]; 
+	f[1] = -x[0] / r3;
+	f[2] = x[3];
+	f[3] = -x[2] / r3;
+	nfe++;     //  Increment the total number of derivative function evaluations
+return;
+}
+
+int interpolate(int istep, double t, double xt[]) {
+// t:          The value of the independent variable where you want an approximate, interpolated value
+// xt:         The approximate, interpolated value of x (the order of the approximation is seven)
+//             This subprogram uses the global variables hold, told, xold, v1[], v2[]... v6[], v7[];
+//             It also needs the f0[], f12[], f13[], f14[], f15[], f16[], and f24[] values
+static int laststep = -1; // To keep track of last istep value
+double u;
+int i;
+    if ((t < told) || (t > told + hold)) {
+        printf(" interpolate called with invalid t value: %lf , should have been in interval [%lf,%lf]\n", t, told, told + hold);
+        return 1;  // return 1 to indicate an error was detected
+    }
+    if (fabs(hold) < EPS) {
+        printf(" interpolate called when stepsize was smaller than %e\n", EPS);
+        return 1;  // return 1 to indicate an error was detected
+    }
+    u = (t - told)/hold;    // The fraction of the stepsize  
+    if (istep != laststep) {  // Not same step as last step, so prepare coefficients for interpolation
+            for (i=0; i<neqns; i++)  {
+                v1[i] = f0[i];
+                v2[i] = -10.5*f0[i] + 14.201576602919816167081697726017431755066943*f12[i] - 
+                    5.6689852255455078785754090169022395870479816*f13[i] + 3.2*f14[i] - 
+                    2.0499648130767427769623871824449592454507835*f15[i] + 
+                    1.31737343570243448845609847332976707743182208*f16[i] - 0.5*f24[i];
+                v3[i] = 46.66666666666666666666666666666666666666667*f0[i] - 
+                    87.2902664004417965922778924772488513999048*f12[i] + 
+                    65.135105409067996156591318868339788120329948*f13[i] - 
+                    40.533333333333333333333333333333333333333333*f14[i] + 
+                    26.838671584600392726962022286133161994826263*f15[i] - 
+                    17.4835105932265922912754486772240987152514118*f16[i] + 
+                    6.6666666666666666666666666666666666666666667*f24[i];
+                v4[i] = -105.*f0[i] + 222.88639881611084863747680606947251151325055*f12[i] - 
+                    212.8838727288609887729485287883212825146208*f13[i] + 163.2*f14[i] - 
+                    116.089673317802003992125748213987805846095736*f15[i] + 
+                     77.887147230552144127597470932836576847465988*f16[i] - 30.*f24[i];
+                v5[i] = 126.*f0[i] - 285.34406401328592006392378481238281468669901*f12[i] + 
+                    311.11412930341036848790179624034677785608822*f13[i] - 276.48*f14[i] + 
+                    217.938950304820148808692037500470581529160357*f15[i] - 
+                    153.229015594944597232670048928434544698549571*f16[i] + 60.*f24[i];
+                v6[i] = -77.*f0[i] + 181.15100533117288056715768411727157368517256*f12[i] - 
+                    214.26102709454769670848368792659289474163563*f13[i] + 211.2*f14[i] - 
+                    183.202634095017623482080435013300829299326339*f15[i] + 
+                    137.11265585839243962340643882262215035578941*f16[i] - 55.*f24[i];
+                v7[i] = 18.857142857142857142857142857142857142857143*f0[i] - 
+                    45.466237312795045741509160419984817720137424*f12[i] + 
+                    56.780523027080760027223446134270532005851709*f13[i] - 
+                    60.3428571428571428571428571428571428571428571*f14[i] + 
+                    56.7805230270807600272234461342705320058517094*f15[i] - 
+                    45.4662373127950457415091604199848177201374237*f16[i] + 
+                    18.8571428571428571428571428571428571428571429*f24[i];
+            }
+        laststep = istep;  //  So on next call, we can tell if we already have the above v coefficients
+        }
+//  Then compute the following for any value of u where user wants an answer (of order 7)
+    for (i=0; i<neqns; i++)  {
+        xt[i] = xold[i] + hold*(v1[i] + (v2[i] + (v3[i] + (v4[i] + (v5[i] + (v6[i] + v7[i]*u)*u)*u)*u)*u)*u)*u;
+    }
+return 0;  // return 0 to indicate no error was detected
+}
+
+void outputSolution(int istep, double t0, double x0[], double h, int printout) {
+// This subprogram is called at the beginning of the integration and at the end of each step
+// User should construct this subprogram to make certain it handles desired kind of output
+// istep:      The number of successful steps taken so far
+// t0:         The value of t at the end of the step just taken
+// x0:         The value of x at the end of the step just taken, a twelfth-order result
+// h:          The size of the step just taken
+// printout:   If value is zero, this subprogram will not even be invoked
+//             If value is 1, one could just include code to printout values at end of each step
+//             If interpolation is desired, the value of printout should be 2
+//             If value is 2, interpolation is possible and valid and results can be printed
+//             for values of t within the last step taken; must invoke interpolate() subprogram
+//             in order for interpolation to occur; interpolated values are of seventh-order
+//
+static double tv = 0.0;  // Initialize the t value (for interpolated values below)
+double xv[MAXEQNS];   // Some local variables to store t and x values (needed by almost everyone) 
+double mystep = 0.1;      // Only needed for this particular example (to printout results every 0.1 in t)
+// For this example of the use of outputSolution, we print a header first
+    if (istep == 0) {
+	    printf("\n Step  t0     x0[0]     x0[1]     x0[2]     x0[3] \n");
+	    printf(" --------------------------------------------------------------\n");
+        //  Then we print the initial values for the problem
+	    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf\n", 0, t0, x0[0], x0[1], x0[2], x0[3]);
+        return;
+    }
+// For printout value of 1, just printout the results at the end of the step
+    if (printout == 1) {
+        printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf \n", istep, t0, x0[0], x0[1], x0[2], x0[3]);
+        return;
+    }
+// When printout is two, we can use interpolate to get intermediate values for x and print those values
+    if (printout == 2) {  
+        //  For example, we can printout x values for evenly spaced values of t (every mystep)
+        while (tv <= t0) {
+            if ((tv > t0-h) && (tv < t0)) {  //  If tv, the value of t, is within the step just taken, then:
+                // Invoke interpolate() and see if all went well for the interpolation
+                if (interpolate(istep, tv, xv)) printf(" error in interpolate() \n");
+				printf(" %2d {%6.2lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf}, \n", istep, tv, xv[0], xv[1], xv[2], xv[3]);
+            } else {
+                if (tv == t0) {  //  Just use the results, x0[]  -- pretty unlikely to get here, but just in case
+                    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf \n", istep, t0, x0[0], x0[1], x0[2], x0[3]);
+                }
+            }
+            tv = tv + mystep;
+        }  // End of the while loop
+    }
+}
+
+void rk1210(double t0, double tf, double x0[], double h, double hmax, double tol, int printout, int fixedstep) {
+// This procedure performs an integration of the differential equations given in procedure "deriv" 
+//             using a variable-step Runge-Kutta method known as RK12(10) developed by T. Feagin in 2006 
+//             The input and output variables are described below:
+// t0:         The initial value of t for the integration
+// tf:         The final value of t for the integration
+// x0[]:       The array of initial values of x and upon return, the final values of x
+// h:          An initial, guessed or given stepsize
+// hmax:       The largest stepsize to be permitted
+// tol:        The tolerance (or desired upper bound) on the local truncation error
+// printout:   Set to one or two if call to outputSolution() from within rk1210 is desired, otherwise zero
+//             If printout is two, outputSolution() will be able to call interpolate() to get intermediate values
+// fixedstep:  Set to one if fixed step integration is desired, otherwise zero
+
+int i, istep; 
+double xn[MAXEQNS];
+double x1[MAXEQNS],   x2[MAXEQNS], x3[MAXEQNS],  x4[MAXEQNS],  x5[MAXEQNS],  x6[MAXEQNS], x7[MAXEQNS]; 
+double x8[MAXEQNS],   x9[MAXEQNS], x10[MAXEQNS], x11[MAXEQNS], x12[MAXEQNS], x13[MAXEQNS];
+double x14[MAXEQNS], x15[MAXEQNS], x16[MAXEQNS], x17[MAXEQNS], x18[MAXEQNS], x19[MAXEQNS]; 
+double x20[MAXEQNS], x21[MAXEQNS], x22[MAXEQNS], x23[MAXEQNS], x24[MAXEQNS];
+double f1[MAXEQNS],   f2[MAXEQNS], f3[MAXEQNS],  f4[MAXEQNS],  f5[MAXEQNS],  f6[MAXEQNS], f7[MAXEQNS]; 
+double f8[MAXEQNS],   f9[MAXEQNS], f10[MAXEQNS], f11[MAXEQNS];
+double f17[MAXEQNS], f18[MAXEQNS], f19[MAXEQNS]; 
+double f20[MAXEQNS], f21[MAXEQNS], f22[MAXEQNS], f23[MAXEQNS];
+double error,  tol10;
+double sqrtfs, difffs, est, hnew;
+
+tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step   
+//  For fewer rejected steps, could change to:   "tol10 = 0.05 * tol;"  for example
+
+istep = 0;  // Set number of steps taken so far to zero
+rstep = 0;  // Set number of rejected steps to zero
+if (printout) outputSolution(istep, t0, x0, h, printout);
+//  While not finished, take another step
+while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
+    deriv(x0 , t0, f0);   // This could be coded more efficiently for rejected steps if desired
+    for (i = 0; i < neqns; i++) {
+        x1[i] = x0[i] + h * (0.20000000000000000000000000000000000000000000000000000000000 * f0[i]);
+    }
+    deriv(x1 , t0 + 0.20000000000000000000000000000000000000000000000000000000000 * h, f1);
+    for (i = 0; i < neqns; i++) {
+        x2[i] = x0[i] + h * (-0.21604938271604938271604938271604938271604938271604938271605 * f0[i]
+                           +  0.77160493827160493827160493827160493827160493827160493827161 * f1[i]);
+    }
+    deriv(x2 , t0 + 0.55555555555555555555555555555555555555555555555555555555556 * h, f2);
+    for (i = 0; i < neqns; i++) {
+        x3[i] = x0[i] + h * (0.20833333333333333333333333333333333333333333333333333333333 * f0[i]
+                           +  0.625 * f2[i]);  //  Zero coefficients are omitted for efficiency
+    }
+    deriv(x3 , t0 + 0.83333333333333333333333333333333333333333333333333333333333 * h, f3);
+    for (i = 0; i < neqns; i++) {
+        x4[i] = x0[i] + h * (0.19333333333333333333333333333333333333333333333333333333333 * f0[i]
+                           +  0.22 * f2[i]     //  Zero coefficients are omitted for efficiency
+                           -  0.08 * f3[i]);
+    }
+    deriv(x4 , t0 + 0.33333333333333333333333333333333333333333333333333333333333 * h, f4);
+    for (i = 0; i < neqns; i++) {
+        x5[i] = x0[i] + h * (0.10000000000000000000000000000000000000000000000000000000000 * f0[i]
+                           +  0.4 * f3[i]      //  Zero coefficients are omitted for efficiency 
+                           +  0.5 * f4[i]);    //  both here and on many occasions below
+    }
+    deriv(x5 , t0 + 1.0000000000000000000000000000000000000000000000000000000000 * h, f5);
+    for (i = 0; i < neqns; i++) {
+        x6[i] = x0[i] + h * (0.10336447165001047757039543569048179154334270833034987924420 * f0[i]
+                           +  0.12405309452894676106158188923711532821107478495518029804407 * f3[i]
+                           +  0.48317116756103289928883648045196250872410925751728917730238 * f4[i]
+                           -  0.038753024569476325208568144376762058039573330234136803880429 * f5[i]);
+    }
+    deriv(x6 , t0 + 0.67183570917051381271224566100279757043895342056868255071022 * h, f6);
+    for (i = 0; i < neqns; i++) {
+        x7[i] = x0[i] + h * (0.12403826143183332408190458598017516814002467069863361229248 * f0[i]
+                           +  0.21705063219795848631784625695315994287591635375773416768466 * f4[i]
+                           +  0.013745579207596675981290780183504819059444399093940853084292 * f5[i]
+                           -  0.066109531726768284445583134149814953167266825208501656591755 * f6[i]);
+    }
+    deriv(x7 , t0 + 0.28872494111062020193545848896702497690811859834180697646967 * h, f7);
+    for (i = 0; i < neqns; i++) {
+        x8[i] = x0[i] + h * (0.091477489485688298314499184698043219708883209997666010009049 * f0[i]
+                           -  0.0054434852371746968996575494414483861134615687384700917806832 * f5[i]
+                           +  0.068071680168845351857851512089510386311275173075879437220395 * f6[i]
+                           +  0.40839431558264104672730685265389478009330318566492464455124 * f7[i]);
+    }
+    deriv(x8 , t0 + 0.56250000000000000000000000000000000000000000000000000000000 * h, f8);
+    for (i = 0; i < neqns; i++) {
+        x9[i] = x0[i] + h * (0.089001365250255101895450935542384178014323269740343411869270 * f0[i]
+                           +  0.0049952822664553236019779340842069280040589114940681409195581 * f5[i]
+                           +  0.3979182388198289973417396030013471560834350609314249708263 * f6[i]
+                           +  0.42793021075257661106819260830089798155824073058039640631236 * f7[i]
+                           -  0.086511763755782700574027747595502910326724639412899596594158 * f8[i]);
+    }
+    deriv(x9 , t0 + 0.83333333333333333333333333333333333333333333333333333333333 * h, f9);
+    for (i = 0; i < neqns; i++) {
+        x10[i] = x0[i] + h * (0.069508762413490754311269390640980982270602106168554461525576 * f0[i]
+                           +  0.12914694190017646197075957948274655112287175150148263404549 * f5[i]
+                           +  1.5307363810231129507634256614321493903117750411243387431301 * f6[i]
+                           +  0.57787476112914005254675134945457671533489210041857188271804 * f7[i]
+                           -  0.95129477232108898053234083738885945393092449879922864805095 * f8[i]
+                           -  0.40827664296563195149748498151975746345962717452097842690993 * f9[i]);
+    }
+    deriv(x10 , t0 + 0.94769543117919928756238016210183672164958932589274064645832 * h, f10);
+    for (i = 0; i < neqns; i++) {
+        x11[i] = x0[i] + h * (0.044486140329513586626945350709246358162016550101868415293331 * f0[i]
+                           -  0.0038047686705696173198423268657454720301633156362685606571796 * f5[i]
+                           +  0.010695506402962420072126260280905915446920607764495739959397 * f6[i]
+                           +  0.020961624449990433329667420592891992080673465066003989807465 * f7[i]
+                           -  0.023314602325932178664856143155197807766533781875605360389885 * f8[i]
+                           +  0.0026326598106453697436993473632533476117497528088740572501096 * f9[i]
+                           +  0.0031547276897702506010354585557211140795520830637445972395978 * f10[i]);
+    }
+    deriv(x11 , t0 + 0.054811287686380264388775367481075447584215361293112878502837 * h, f11);
+    for (i = 0; i < neqns; i++) {
+        x12[i] = x0[i] + h * (0.019458881511975547558880109652531776124207376201627318623122 * f0[i]
+                           +  0.000067851294917181250930612165345236747619436478125916533232153 * f8[i]
+                           -  0.000042979585904927362327100533023016234356886338772488360367555 * f9[i]
+                           +  0.000017635898226028515540748592895330213993755344282997573414898 * f10[i]
+                           +  0.065386662741502705100959523138518103354951135878738209835192 * f11[i]);
+    }
+    deriv(x12 , t0 + 0.084888051860716535063983893016267430206414817564001954204593 * h, f12);
+    for (i = 0; i < neqns; i++) {
+        x13[i] = x0[i] + h * (0.20683683566427710591682817479827236107890919604344641159823 * f0[i]
+                           +  0.016679606710415647282804586666469645030632650509479250521551 * f8[i]
+                           -  0.0087950156320071021445702417824998659113023499021995920870498 * f9[i]
+                           +  0.0034667545536246391082446231524637920942751365409859640363723 * f10[i]
+                           -  0.86126446010571767816143256225835124203027049896689120179922 * f11[i]
+                           +  0.90865188207405028109623947846926214503495712993925678917879 * f12[i]);
+    }
+    deriv(x13 , t0 + 0.26557560326464289309811405904561683529720126416407762144867 * h, f13);
+    for (i = 0; i < neqns; i++) {
+        x14[i] = x0[i] + h * (0.020392608465448401009151131467692568603850444956241300456238 * f0[i]
+                           +  0.086946939201668594867540055558394750583395446093094095957735 * f8[i]
+                           -  0.019164963041014984228643661179140505328717007660233767358768 * f9[i]
+                           +  0.0065562915949366328736487157324424451603482875525374602409884 * f10[i]
+                           +  0.098747612812743478090379852867403389973892496800663220144546 * f11[i]
+                           +  0.0053536469552499605508326017361556740871711024727402105611832 * f12[i]
+                           +  0.30116786401096791683709130381705167692005922978495747999808 * f13[i]);
+    }
+    deriv(x14 , t0 + 0.50000000000000000000000000000000000000000000000000000000000 * h, f14);
+    for (i = 0; i < neqns; i++) {
+        x15[i] = x0[i] + h * (0.22841043391777809954711541289300439877913699459694854572228 * f0[i]
+                           -  0.49870740079302525063501656744251151213860377095968229238304 * f8[i]
+                           +  0.13484116833572447855259670379257010479170072720598105820169 * f9[i]
+                           -  0.038745824405583415843990422692402923093516105914280680567436 * f10[i]
+                           -  1.2747325747347484424038843082490895238097929271325035019964 * f11[i]
+                           +  1.4391636446287716520118445243703808187529930357791183963052 * f12[i]
+                           -  0.21400746796799025421950354082734956963902809234481279549903 * f13[i]
+                           +  0.95820241775443023989272413910978137105990887460515364876804 * f14[i]);
+    }
+    deriv(x15 , t0 + 0.73442439673535710690188594095438316470279873583592237855133 * h, f15);
+    for (i = 0; i < neqns; i++) {
+        x16[i] = x0[i] + h * (2.0022247765597420361424964601250674712144030622571172120980 * f0[i]
+                           +  2.0670180996152491209195465643813859582541185967334160067955 * f8[i]
+                           +  0.62397813608613954195747127983149446615529231616702108066314 * f9[i]
+                           -  0.046228368550031143028320355412906206939194710188011272318577 * f10[i]
+                           -  8.8497328836264961486007524672711894928660483545709270109463 * f11[i]
+                           +  7.7425770785085597622743722579183558956018859078503719743361 * f12[i]
+                           -  0.58835851925086921099335331412771174564412588213094120289644 * f13[i]
+                           -  1.106837333623806493957047080169530561761957696170148994429 * f14[i]
+                           -  0.92952903757920399977839723829123321422078805751189974750707 * f15[i]);
+    }
+    deriv(x16 , t0 + 0.91511194813928346493601610698373256979358518243599804579541 * h, f16);
+    for (i = 0; i < neqns; i++) {
+        x17[i] = x0[i] + h * (3.1378953341207344293445160898988879680816125933032210026831 * f0[i]
+                           +  0.12914694190017646197075957948274655112287175150148263404549 * f5[i]
+                           +  1.5307363810231129507634256614321493903117750411243387431301 * f6[i]
+                           +  0.57787476112914005254675134945457671533489210041857188271804 * f7[i]
+                           +  5.4208826305512668305005684089185742194130055885186215640336 * f8[i]
+                           +  0.23154692603482930487266380087764366090488018083594569383694 * f9[i]
+                           +  0.075929299557891356016230131178525187356180134233319489529206 * f10[i]
+                           -  12.372997338018651328741455340259580659134982261753590597625 * f11[i]
+                           +  9.8545588346476954393595720931736920208036776572177710190696 * f12[i]
+                           +  0.085911143137043652957935770905236777288998049512232960115954 * f13[i]
+                           -  5.6524275286264392111718209008176276118039260264418921867397 * f14[i]
+                           -  1.9430093524281961088383377678236428772872489912416692047787 * f15[i]
+                           -  0.12835260184940454201842871431934462074214649133561235355992 * f16[i]);
+    }
+    deriv(x17 , t0 + 0.94769543117919928756238016210183672164958932589274064645832 * h, f17);
+    for (i = 0; i < neqns; i++) {
+        x18[i] = x0[i] + h * (1.3836005443219601487853811829816771682516326848992251999556 * f0[i]
+                           +  0.0049952822664553236019779340842069280040589114940681409195581 * f5[i]
+                           +  0.3979182388198289973417396030013471560834350609314249708263 * f6[i]
+                           +  0.42793021075257661106819260830089798155824073058039640631236 * f7[i]
+                           -  1.3029910742447577091655143912304757334207147599839964598215 * f8[i]
+                           +  0.6612922786693770290971125281075130727345734122940080715007 * f9[i]
+                           -  0.14455977430695434976596939368870346390058582244154565553015 * f10[i]
+                           -  6.9657603473179820346785386746108391935679224810591925546082 * f11[i]
+                           +  6.6580854323599174835340829554221045063219319757693512071644 * f12[i]
+                           -  1.669973751088414864046958057255108450498079691992362275758 * f13[i]
+                           +  2.0641370231803526383228904030183264713060465122398645217009 * f14[i]
+                           -  0.67474396264430647186295812957083772319207987599840505864889 * f15[i]
+                           -  0.0011561883479493950049070360843590761005960575493530558204573 * f16[i]
+                           -  0.0054405790867700738931981991424163102466072658501501248593859 * f17[i]);
+    }
+    deriv(x18 , t0 + 0.83333333333333333333333333333333333333333333333333333333333 * h, f18);
+    for (i = 0; i < neqns; i++) {
+        x19[i] = x0[i] + h * (0.95123629704828766947463797589497355216690337898347542575823 * f0[i]
+                           +  0.21705063219795848631784625695315994287591635375773416768466 * f4[i]
+                           +  0.013745579207596675981290780183504819059444399093940853084292 * f5[i]
+                           -  0.066109531726768284445583134149814953167266825208501656591755 * f6[i]
+                           +  0.15228169673641444713660469704074713192148643269942211209962 * f8[i]
+                           -  0.33774101835759984080230079313399800435464342445753966767008 * f9[i]
+                           -  0.019282598163399578153494919928682440046935311063078798212113 * f10[i]
+                           -  3.6825926969686680993240901553549960357631212074688888020188 * f11[i]
+                           +  3.1619787040698206354153352841968385401835208034288700233131 * f12[i]
+                           -  0.37046252210688529071699185602205112547794348228408056917739 * f13[i]
+                           -  0.051497420036544043499643445669812798494116861647431687102031 * f14[i]
+                           -  0.00082962553212015294678704354179284841665938267520272067753655 * f15[i]
+                           +  2.798010414192785989865865890700275839613554026408795032135e-6 * f16[i]
+                           +  0.041860391641236028796984102077678846179411944068935617894225 * f17[i]
+                           +  0.27908425509087735591566087455537964996628216756012626929022 * f18[i]);
+    }
+    deriv(x19 , t0 + 0.28872494111062020193545848896702497690811859834180697646967 * h, f19);
+    for (i = 0; i < neqns; i++) {
+        x20[i] = x0[i] + h * (0.10336447165001047757039543569048179154334270833034987924420 * f0[i]
+                           +  0.12405309452894676106158188923711532821107478495518029804407 * f3[i]
+                           +  0.48317116756103289928883648045196250872410925751728917730238 * f4[i]
+                           -  0.038753024569476325208568144376762058039573330234136803880429 * f5[i]
+                           -  0.43831382036112242039105978894096017642068283665260069858009 * f7[i]
+                           -  0.21863663372167664768511148501715119936250937369828833059349 * f9[i]
+                           -  0.031233476439471922998163499520644034976617475962657812232302 * f10[i]
+                           +  0.031233476439471922998163499520644034976617475962657812232302 * f17[i]
+                           +  0.21863663372167664768511148501715119936250937369828833059349 * f18[i]
+                           +  0.43831382036112242039105978894096017642068283665260069858009 * f19[i]);
+    }
+    deriv(x20 , t0 + 0.67183570917051381271224566100279757043895342056868255071022 * h, f20);
+    for (i = 0; i < neqns; i++) {
+        x21[i] = x0[i] + h * (0.19333333333333333333333333333333333333333333333333333333333 * f0[i]
+                           +  0.22 * f2[i]
+                           -  0.08 * f3[i]
+                           +  0.098425613049931592815290028685604824334820252149128857595214 * f6[i]
+                           -  0.19641088922305465344652650439010041767753909534013553241885 * f7[i]
+                           +  0.43645793049306872939182612258794913760967067671252503476332 * f9[i]
+                           +  0.065261372167572109856037093980555569835054381070841471673027 * f10[i]
+                           -  0.065261372167572109856037093980555569835054381070841471673027 * f17[i]
+                           -  0.43645793049306872939182612258794913760967067671252503476332 * f18[i]
+                           +  0.19641088922305465344652650439010041767753909534013553241885 * f19[i]
+                           -  0.098425613049931592815290028685604824334820252149128857595214 * f20[i]);
+    }
+    deriv(x21 , t0 + 0.33333333333333333333333333333333333333333333333333333333333 * h, f21);
+    for (i = 0; i < neqns; i++) {
+        x22[i] = x0[i] + h * (-0.21604938271604938271604938271604938271604938271604938271605 * f0[i]
+                           +  0.77160493827160493827160493827160493827160493827160493827161 * f1[i]
+                           -  0.66666666666666666666666666666666666666666666666666666666667 * f4[i]
+                           -  0.39069646929597845144699980225849598124909966529439594555916 * f6[i]
+                           +  0.39069646929597845144699980225849598124909966529439594555916 * f20[i]
+                           +  0.66666666666666666666666666666666666666666666666666666666667 * f21[i]);
+    }
+    deriv(x22 , t0 + 0.55555555555555555555555555555555555555555555555555555555556 * h, f22);
+    for (i = 0; i < neqns; i++) {
+        x23[i] = x0[i] + h * (0.20000000000000000000000000000000000000000000000000000000000 * f0[i]
+                           -  0.16460905349794238683127572016460905349794238683127572016461 * f2[i]
+                           +  0.16460905349794238683127572016460905349794238683127572016461 * f22[i]);
+    }
+    deriv(x23 , t0 + 0.20000000000000000000000000000000000000000000000000000000000 * h, f23);
+    for (i = 0; i < neqns; i++) {
+        x24[i] = x0[i] + h * (1.4717872488111040845294955098902361129353531551857169193940 * f0[i]
+                           +  0.7875 * f1[i]
+                           +  0.4212962962962962962962962962962962962962962962962962962963 * f2[i]
+                           +  0.29166666666666666666666666666666666666666666666666666666667 * f4[i]
+                           +  0.34860071762832956320685442162965756927468994736784746575376 * f6[i]
+                           +  0.22949954476899484958289023371055544707382356966650670066251 * f7[i]
+                           +  5.7904648579048197915983197817700347109827950603672241133319 * f8[i]
+                           +  0.41858751185650686887407375942659620722646144760424815108002 * f9[i]
+                           +  0.30703988022247400264965381749010669038925148231321399938665 * f10[i]
+                           -  4.6870090535060333221425634468385324806557441579474204047029 * f11[i]
+                           +  3.1357166559380226215203815239987385655439543619996291542908 * f12[i]
+                           +  1.401348297109657208175105062756204410558450173139305083489 * f13[i]
+                           -  5.5293110143949902362901030600576433642127605577765815640091 * f14[i]
+                           -  0.8531382355080633493095468949747849061889275080395525195575 * f15[i]
+                           +  0.10357578037361014041180460716777279551829391445850017557375 * f16[i]
+                           -  0.14047441695060094114254690120213253487066592370003495719655 * f17[i]
+                           -  0.41858751185650686887407375942659620722646144760424815108002 * f18[i]
+                           -  0.22949954476899484958289023371055544707382356966650670066251 * f19[i]
+                           -  0.34860071762832956320685442162965756927468994736784746575376 * f20[i]
+                           -  0.29166666666666666666666666666666666666666666666666666666667 * f21[i]
+                           -  0.4212962962962962962962962962962962962962962962962962962963 * f22[i]
+                           -  0.7875 * f23[i]);
+    }
+    deriv(x24 , t0 + 1.0000000000000000000000000000000000000000000000000000000000 * h, f24);
+    for (i = 0; i < neqns; i++) {
+        xn[i] = x0[i] + h * (0.023809523809523809523809523809523809523809523809523809523810 * f0[i]
+                           +  0.0234375 * f1[i]
+                           +  0.03125 * f2[i]
+                           +  0.041666666666666666666666666666666666666666666666666666666667 * f4[i]
+                           +  0.05 * f6[i]
+                           +  0.05 * f7[i]
+                           +  0.1 * f9[i]
+                           +  0.071428571428571428571428571428571428571428571428571428571429 * f10[i]
+                           +  0.13841302368078297400535020314503314674881364008994123459127 * f12[i]
+                           +  0.21587269060493131170893551114068113896547207419577305112302 * f13[i]
+                           +  0.24380952380952380952380952380952380952380952380952380952381 * f14[i]
+                           +  0.21587269060493131170893551114068113896547207419577305112302 * f15[i]
+                           +  0.13841302368078297400535020314503314674881364008994123459127 * f16[i]
+                           -  0.071428571428571428571428571428571428571428571428571428571429 * f17[i]
+                           -  0.1 * f18[i]
+                           -  0.05 * f19[i]
+                           -  0.05 * f20[i]
+                           -  0.041666666666666666666666666666666666666666666666666666666667 * f21[i]
+                           -  0.03125 * f22[i]
+                           -  0.0234375 * f23[i]
+                           +  0.02380952380952380952380952380952380952380952380952380952381 * f24[i]);
+    }  
+	//  Now, just prepare for the next step
+	sqrtfs = 0.0;  
+	for (i = 0; i < neqns; i++) {
+		difffs = (f1[i] - f23[i]);
+		sqrtfs += difffs * difffs;
+	}
+	sqrtfs = sqrt(sqrtfs);
+	est = 0.07656250000000000 * h * sqrtfs;  // An estimate of the norm of the LTE
+	if (est < EPS) {  // If error estimate is almost zero, then set hnew to maximum stepsize
+			hnew = hmax;
+		} else {
+			hnew = h * pow(tol10 / est, 0.0909090909090909);  // Stepsize based on the error estimate
+		}
+	if (fixedstep) hnew = h;          // If performing fixed step integration, just keep same stepsize
+	if ((est <= tol) || fixedstep) {  // Step successful, so update numerical solution, t0, istep, and print
+	    for (i = 0; i < neqns; i++) {
+                xold[i] = x0[i];
+                x0[i] = xn[i];
+            }  
+        told = t0;
+        hold = h;
+        t0 = t0 + h;
+        istep++;
+        if (printout) outputSolution(istep, t0, x0, h, printout); // For output of the approximate solution
+		h = hnew;  // For next step, just use the stepsize based on the error estimate 
+	} else {       // Otherwise, the step is rejected, so set new stepsize and retry
+                if (printout) printf(" Step was rejected, est was: %10.2e \n", est);
+                h = hnew;
+	    rstep++;
+		if (printout) printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %10.2e\n", istep, t0, x0[0], x0[1], x0[2], x0[3], est);
+	}
+        if ((t0 + hnew) > tf) h = tf - t0;
+} // End of main loop
+return;
+}
+//  int _tmain(int argc, _TCHAR* argv[]) {         //  Only for Microsoft Visual C++
+  int main() {                                 //  For most other C compilers
+//  The main procedure 
+//  Set the initial conditions and stepsize 
+double t0;    // Initial t value
+double tf;    // Final   t value
+double x0[4]; // Initial x values
+double h;     // An initial guess for the stepsize to try
+double hmax;  // A maximum stepsize (in case error estimate is near zero)
+double tol;   // A tolerance for the size of the local truncation error
+double error; // The global error
+int    printout = 2;  // To control when outputSolution() is called from within rk1210 
+int    fixedstep = 0; // To control whether fixed step integration is desired (0 for variable step)
+double ecc;
+
+    t0 = 0.0;
+    tf = 2 * 6.283185307179586476925286766559005768394;  // tf is set to 4 Pi
+    ecc = 0.2;
+    neqns = 4;
+    x0[0] = 1.0;   //  Initial conditions
+    x0[1] = ecc; 
+    x0[2] = 0.0;
+    x0[3] = sqrt(1.0 - ecc*ecc);
+    h = 0.25;      //  An initial guess or setting for the stepsize, h
+    hmax = 1.0;  
+    tol = 1.0e-10;
+    rk1210(t0, tf, x0, h, hmax, tol, printout, fixedstep);
+    //   Now just measure global error based upon knowledge of exact solution at tf, etc.
+    error = sqrt((x0[0]-1.0)*(x0[0]-1.0) + (x0[1]-ecc)*(x0[1]-ecc) + (x0[2] * x0[2]) + 
+			 (x0[3]-sqrt(1.0 - ecc*ecc)) * (x0[3]-sqrt(1.0 - ecc*ecc)));
+    printf("\n Global error: %10.5e and -log(error):  %15.5lf\n", error, -log10(error));
+    printf(" Number of function evaluations: %d  and log(nfe): %8.5lf\n", nfe, log10((double)nfe)); 
+    printf(" Number of rejected steps: %d\n", rstep);
+    //char chr = getchar();  // To keep window visible on a Windows system
+    return 0;
+}
+
+

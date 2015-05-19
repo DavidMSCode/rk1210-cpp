@@ -1,0 +1,129 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Runge-Kutta 12(10) Description
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+The RK12(10) builds upon previous Runge-Kutta methodologies to estimate
+ the local truncation error, and correspondingly changes the step size to
+ cause the truncation errors to be more uniform.
+ By using an embedded 10th-order method to compare results with the 12th-order
+ method, the local truncation error may be estimated at the end of each
+ step.
+ This method's ability to control the step size allows for applications
+ requiring a high accuracy.
+ 
+\end_layout
+
+\begin_layout Section
+C++ Code Overview
+\end_layout
+
+\begin_layout Standard
+When the rk1210() function is called, it performs an integration of the
+ differential equations given in the procedure "deriv" (currently applied
+ to the 2-D, two-body problem).
+ The function allows the user to specify the initial time, final time, initial
+ state values, initial step size, max step size, tolerance of local truncation
+ error, printout options (print values at each step or interpolated values
+ for t in the last step), and an option to have the step size be fixed.
+ The tolerance is set to the input tolerance divided by 10.
+ The variables istep and rstep count the number of The values of x are determine
+d using the equations of condition and corresponding coefficients determiend
+ by Fegain.
+ Next, the step size is adjusted based on the error estimate and results
+ are printed out to the user.
+ Iterpolated values of 7th order may be calculated and printed for values
+ of t within the last step using the interpolate() frunction; these interpolate
+ values are calculated for the specified mystep (currently set to 0.1 in
+ terms of t).
+\begin_inset Phantom VPhantom
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename Research/rk1210_flowchart.png
+	scale 70
+	rotateOrigin center
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
