@@ -23,12 +23,14 @@ void deriv(double x[], double t, double f[]) {
 //  The derivatives are defined in this procedure (see "rk1210" procedure below for more information)
 //  The code below is for the 2D two-body problem
 	double r3;
-	r3 = sqrt(x[0] * x[0] + x[2] * x[2]);
+	r3 = sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 	r3 = r3 * r3 * r3;
 	f[0] = x[1]; 
 	f[1] = -x[0] / r3;
 	f[2] = x[3];
 	f[3] = -x[2] / r3;
+	f[4] = x[5];
+	f[5] = -x[4] / r3;
 	nfe++;     //  Increment the total number of derivative function evaluations
 return;
 }
@@ -112,15 +114,15 @@ double xv[MAXEQNS];   // Some local variables to store t and x values (needed by
 double mystep = 0.1;      // Only needed for this particular example (to printout results every 0.1 in t)
 // For this example of the use of outputSolution, we print a header first
     if (istep == 0) {
-	    printf("\n Step  t0     x0[0]     x0[1]     x0[2]     x0[3] \n");
+	    printf("\n Step  t0     x0[0]     x0[1]     x0[2]     x0[3]  x 0[4]     x0[5] \n");
 	    printf(" --------------------------------------------------------------\n");
         //  Then we print the initial values for the problem
-	    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf\n", 0, t0, x0[0], x0[1], x0[2], x0[3]);
+	    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf\n", 0, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5]);
         return;
     }
 // For printout value of 1, just printout the results at the end of the step
     if (printout == 1) {
-        printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf \n", istep, t0, x0[0], x0[1], x0[2], x0[3]);
+        printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5]);
         return;
     }
 // When printout is two, we can use interpolate to get intermediate values for x and print those values
@@ -130,10 +132,10 @@ double mystep = 0.1;      // Only needed for this particular example (to printou
             if ((tv > t0-h) && (tv < t0)) {  //  If tv, the value of t, is within the step just taken, then:
                 // Invoke interpolate() and see if all went well for the interpolation
                 if (interpolate(istep, tv, xv)) printf(" error in interpolate() \n");
-				printf(" %2d {%6.2lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf}, \n", istep, tv, xv[0], xv[1], xv[2], xv[3]);
+				printf(" %2d {%6.2lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf}, \n", istep, tv, xv[0], xv[1], xv[2], xv[3], xv[4], xv[5]);
             } else {
                 if (tv == t0) {  //  Just use the results, x0[]  -- pretty unlikely to get here, but just in case
-                    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf \n", istep, t0, x0[0], x0[1], x0[2], x0[3]);
+                    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5]);
                 }
             }
             tv = tv + mystep;
@@ -471,7 +473,7 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
                 if (printout) printf(" Step was rejected, est was: %10.2e \n", est);
                 h = hnew;
 	    rstep++;
-		if (printout) printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %10.2e\n", istep, t0, x0[0], x0[1], x0[2], x0[3], est);
+		if (printout) printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %10.2e\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5] est);
 	}
         if ((t0 + hnew) > tf) h = tf - t0;
 } // End of main loop
@@ -483,7 +485,7 @@ return;
 //  Set the initial conditions and stepsize 
 double t0;    // Initial t value
 double tf;    // Final   t value
-double x0[4]; // Initial x values
+double x0[6]; // Initial x values
 double h;     // An initial guess for the stepsize to try
 double hmax;  // A maximum stepsize (in case error estimate is near zero)
 double tol;   // A tolerance for the size of the local truncation error
@@ -495,11 +497,13 @@ double ecc;
     t0 = 0.0;
     tf = 2 * 6.283185307179586476925286766559005768394;  // tf is set to 4 Pi
     ecc = 0.2;
-    neqns = 4;
+    neqns = 6;
     x0[0] = 1.0;   //  Initial conditions
     x0[1] = ecc; 
     x0[2] = 0.0;
     x0[3] = sqrt(1.0 - ecc*ecc);
+    x0[4] = 0.0;
+    x0[5] = 0.0;
     h = 0.25;      //  An initial guess or setting for the stepsize, h
     hmax = 1.0;  
     tol = 1.0e-10;
