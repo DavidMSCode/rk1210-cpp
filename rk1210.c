@@ -24,17 +24,14 @@ void deriv(double x[], double t, double f[]) {
 //  The derivatives are defined in this procedure (see "rk1210" procedure below for more information)
 //  The code below is for the 2D two-body problem
 	double r3;
+
 	r3 = sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 	r3 = r3 * r3 * r3;
 	f[0] = x[3];
 	f[1] = x[4];
 	f[2] = x[5];
 
-	f[3] = MU*(-x[0] / r3);
-	f[4] = MU*(-x[1] / r3);
-	f[5] = MU*(-x[2] / r3);
-
-
+	EGM2008( x,  &f[3], 40);
 
 	nfe++;     //  Increment the total number of derivative function evaluations
 return;
