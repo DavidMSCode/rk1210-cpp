@@ -1,22 +1,22 @@
 //
-//  Test program for the RK12(10) Method (Feagin, 2006)  
+//  Test program for the RK12(10) Method (Feagin, 2006)
 //
 //#include "stdafx.h"   //  Only for Microsoft Visual C++
 #include "stdio.h" //  For most other C compilers
 #include "math.h"
 #define EPS  1.0e-14  //  Epsilon, a nearly zero value   (a machine dependent constant)
-//  If your problem has more than 10 differential equations, then you will need to increase 
+//  If your problem has more than 10 differential equations, then you will need to increase
 //  MAXEQNS to be as great or greater than that number
 #define MAXEQNS 10    //  The maximum number of differential equations   (a constant)
 //  The global variables are:
-int nfe = 0;          //  The total number of function evaluations 
+int nfe = 0;          //  The total number of function evaluations
 int rstep = 0;        //  The total number of rejected steps
 double hold, told, xold[MAXEQNS]; //  The old h, t, and x valueshold
 //  The v1[] ... v7[] arrays store the terms used to interpolate the intermediate solution values
 double v1[MAXEQNS], v2[MAXEQNS], v3[MAXEQNS], v4[MAXEQNS], v5[MAXEQNS], v6[MAXEQNS], v7[MAXEQNS];
 //  The following derivative function evaluations are needed for the interpolation as well
 double f0[MAXEQNS], f12[MAXEQNS], f13[MAXEQNS], f14[MAXEQNS], f15[MAXEQNS], f16[MAXEQNS], f24[MAXEQNS];
-int    neqns; // The number of differential equations being integrated
+const int neqns = 6; // The number of differential equations being integrated
 //  End of global variables
 
 void deriv(double x[], double t, double f[]) {
@@ -25,7 +25,7 @@ void deriv(double x[], double t, double f[]) {
 	double r3;
 	r3 = sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 	r3 = r3 * r3 * r3;
-	f[0] = x[1]; 
+	f[0] = x[1];
 	f[1] = -x[0] / r3;
 	f[2] = x[3];
 	f[3] = -x[2] / r3;
@@ -51,39 +51,39 @@ int i;
         printf(" interpolate called when stepsize was smaller than %e\n", EPS);
         return 1;  // return 1 to indicate an error was detected
     }
-    u = (t - told)/hold;    // The fraction of the stepsize  
+    u = (t - told)/hold;    // The fraction of the stepsize
     if (istep != laststep) {  // Not same step as last step, so prepare coefficients for interpolation
             for (i=0; i<neqns; i++)  {
                 v1[i] = f0[i];
-                v2[i] = -10.5*f0[i] + 14.201576602919816167081697726017431755066943*f12[i] - 
-                    5.6689852255455078785754090169022395870479816*f13[i] + 3.2*f14[i] - 
-                    2.0499648130767427769623871824449592454507835*f15[i] + 
+                v2[i] = -10.5*f0[i] + 14.201576602919816167081697726017431755066943*f12[i] -
+                    5.6689852255455078785754090169022395870479816*f13[i] + 3.2*f14[i] -
+                    2.0499648130767427769623871824449592454507835*f15[i] +
                     1.31737343570243448845609847332976707743182208*f16[i] - 0.5*f24[i];
-                v3[i] = 46.66666666666666666666666666666666666666667*f0[i] - 
-                    87.2902664004417965922778924772488513999048*f12[i] + 
-                    65.135105409067996156591318868339788120329948*f13[i] - 
-                    40.533333333333333333333333333333333333333333*f14[i] + 
-                    26.838671584600392726962022286133161994826263*f15[i] - 
-                    17.4835105932265922912754486772240987152514118*f16[i] + 
+                v3[i] = 46.66666666666666666666666666666666666666667*f0[i] -
+                    87.2902664004417965922778924772488513999048*f12[i] +
+                    65.135105409067996156591318868339788120329948*f13[i] -
+                    40.533333333333333333333333333333333333333333*f14[i] +
+                    26.838671584600392726962022286133161994826263*f15[i] -
+                    17.4835105932265922912754486772240987152514118*f16[i] +
                     6.6666666666666666666666666666666666666666667*f24[i];
-                v4[i] = -105.*f0[i] + 222.88639881611084863747680606947251151325055*f12[i] - 
-                    212.8838727288609887729485287883212825146208*f13[i] + 163.2*f14[i] - 
-                    116.089673317802003992125748213987805846095736*f15[i] + 
+                v4[i] = -105.*f0[i] + 222.88639881611084863747680606947251151325055*f12[i] -
+                    212.8838727288609887729485287883212825146208*f13[i] + 163.2*f14[i] -
+                    116.089673317802003992125748213987805846095736*f15[i] +
                      77.887147230552144127597470932836576847465988*f16[i] - 30.*f24[i];
-                v5[i] = 126.*f0[i] - 285.34406401328592006392378481238281468669901*f12[i] + 
-                    311.11412930341036848790179624034677785608822*f13[i] - 276.48*f14[i] + 
-                    217.938950304820148808692037500470581529160357*f15[i] - 
+                v5[i] = 126.*f0[i] - 285.34406401328592006392378481238281468669901*f12[i] +
+                    311.11412930341036848790179624034677785608822*f13[i] - 276.48*f14[i] +
+                    217.938950304820148808692037500470581529160357*f15[i] -
                     153.229015594944597232670048928434544698549571*f16[i] + 60.*f24[i];
-                v6[i] = -77.*f0[i] + 181.15100533117288056715768411727157368517256*f12[i] - 
-                    214.26102709454769670848368792659289474163563*f13[i] + 211.2*f14[i] - 
-                    183.202634095017623482080435013300829299326339*f15[i] + 
+                v6[i] = -77.*f0[i] + 181.15100533117288056715768411727157368517256*f12[i] -
+                    214.26102709454769670848368792659289474163563*f13[i] + 211.2*f14[i] -
+                    183.202634095017623482080435013300829299326339*f15[i] +
                     137.11265585839243962340643882262215035578941*f16[i] - 55.*f24[i];
-                v7[i] = 18.857142857142857142857142857142857142857143*f0[i] - 
-                    45.466237312795045741509160419984817720137424*f12[i] + 
-                    56.780523027080760027223446134270532005851709*f13[i] - 
-                    60.3428571428571428571428571428571428571428571*f14[i] + 
-                    56.7805230270807600272234461342705320058517094*f15[i] - 
-                    45.4662373127950457415091604199848177201374237*f16[i] + 
+                v7[i] = 18.857142857142857142857142857142857142857143*f0[i] -
+                    45.466237312795045741509160419984817720137424*f12[i] +
+                    56.780523027080760027223446134270532005851709*f13[i] -
+                    60.3428571428571428571428571428571428571428571*f14[i] +
+                    56.7805230270807600272234461342705320058517094*f15[i] -
+                    45.4662373127950457415091604199848177201374237*f16[i] +
                     18.8571428571428571428571428571428571428571429*f24[i];
             }
         laststep = istep;  //  So on next call, we can tell if we already have the above v coefficients
@@ -110,7 +110,7 @@ void outputSolution(int istep, double t0, double x0[], double h, int printout) {
 //             in order for interpolation to occur; interpolated values are of seventh-order
 //
 static double tv = 0.0;  // Initialize the t value (for interpolated values below)
-double xv[MAXEQNS];   // Some local variables to store t and x values (needed by almost everyone) 
+double xv[MAXEQNS];   // Some local variables to store t and x values (needed by almost everyone)
 double mystep = 0.1;      // Only needed for this particular example (to printout results every 0.1 in t)
 // For this example of the use of outputSolution, we print a header first
     if (istep == 0) {
@@ -126,7 +126,7 @@ double mystep = 0.1;      // Only needed for this particular example (to printou
         return;
     }
 // When printout is two, we can use interpolate to get intermediate values for x and print those values
-    if (printout == 2) {  
+    if (printout == 2) {
         //  For example, we can printout x values for evenly spaced values of t (every mystep)
         while (tv <= t0) {
             if ((tv > t0-h) && (tv < t0)) {  //  If tv, the value of t, is within the step just taken, then:
@@ -144,8 +144,8 @@ double mystep = 0.1;      // Only needed for this particular example (to printou
 }
 
 void rk1210(double t0, double tf, double x0[], double h, double hmax, double tol, int printout, int fixedstep) {
-// This procedure performs an integration of the differential equations given in procedure "deriv" 
-//             using a variable-step Runge-Kutta method known as RK12(10) developed by T. Feagin in 2006 
+// This procedure performs an integration of the differential equations given in procedure "deriv"
+//             using a variable-step Runge-Kutta method known as RK12(10) developed by T. Feagin in 2006
 //             The input and output variables are described below:
 // t0:         The initial value of t for the integration
 // tf:         The final value of t for the integration
@@ -157,20 +157,20 @@ void rk1210(double t0, double tf, double x0[], double h, double hmax, double tol
 //             If printout is two, outputSolution() will be able to call interpolate() to get intermediate values
 // fixedstep:  Set to one if fixed step integration is desired, otherwise zero
 
-int i, istep; 
+int i, istep;
 double xn[MAXEQNS];
-double x1[MAXEQNS],   x2[MAXEQNS], x3[MAXEQNS],  x4[MAXEQNS],  x5[MAXEQNS],  x6[MAXEQNS], x7[MAXEQNS]; 
+double x1[MAXEQNS],   x2[MAXEQNS], x3[MAXEQNS],  x4[MAXEQNS],  x5[MAXEQNS],  x6[MAXEQNS], x7[MAXEQNS];
 double x8[MAXEQNS],   x9[MAXEQNS], x10[MAXEQNS], x11[MAXEQNS], x12[MAXEQNS], x13[MAXEQNS];
-double x14[MAXEQNS], x15[MAXEQNS], x16[MAXEQNS], x17[MAXEQNS], x18[MAXEQNS], x19[MAXEQNS]; 
+double x14[MAXEQNS], x15[MAXEQNS], x16[MAXEQNS], x17[MAXEQNS], x18[MAXEQNS], x19[MAXEQNS];
 double x20[MAXEQNS], x21[MAXEQNS], x22[MAXEQNS], x23[MAXEQNS], x24[MAXEQNS];
-double f1[MAXEQNS],   f2[MAXEQNS], f3[MAXEQNS],  f4[MAXEQNS],  f5[MAXEQNS],  f6[MAXEQNS], f7[MAXEQNS]; 
+double f1[MAXEQNS],   f2[MAXEQNS], f3[MAXEQNS],  f4[MAXEQNS],  f5[MAXEQNS],  f6[MAXEQNS], f7[MAXEQNS];
 double f8[MAXEQNS],   f9[MAXEQNS], f10[MAXEQNS], f11[MAXEQNS];
-double f17[MAXEQNS], f18[MAXEQNS], f19[MAXEQNS]; 
+double f17[MAXEQNS], f18[MAXEQNS], f19[MAXEQNS];
 double f20[MAXEQNS], f21[MAXEQNS], f22[MAXEQNS], f23[MAXEQNS];
 double error,  tol10;
 double sqrtfs, difffs, est, hnew;
 
-tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step   
+tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 //  For fewer rejected steps, could change to:   "tol10 = 0.05 * tol;"  for example
 
 istep = 0;  // Set number of steps taken so far to zero
@@ -201,7 +201,7 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
     deriv(x4 , t0 + 0.33333333333333333333333333333333333333333333333333333333333 * h, f4);
     for (i = 0; i < neqns; i++) {
         x5[i] = x0[i] + h * (0.10000000000000000000000000000000000000000000000000000000000 * f0[i]
-                           +  0.4 * f3[i]      //  Zero coefficients are omitted for efficiency 
+                           +  0.4 * f3[i]      //  Zero coefficients are omitted for efficiency
                            +  0.5 * f4[i]);    //  both here and on many occasions below
     }
     deriv(x5 , t0 + 1.0000000000000000000000000000000000000000000000000000000000 * h, f5);
@@ -443,9 +443,9 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
                            -  0.03125 * f22[i]
                            -  0.0234375 * f23[i]
                            +  0.02380952380952380952380952380952380952380952380952380952381 * f24[i]);
-    }  
+    }
 	//  Now, just prepare for the next step
-	sqrtfs = 0.0;  
+	sqrtfs = 0.0;
 	for (i = 0; i < neqns; i++) {
 		difffs = (f1[i] - f23[i]);
 		sqrtfs += difffs * difffs;
@@ -462,60 +462,20 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
 	    for (i = 0; i < neqns; i++) {
                 xold[i] = x0[i];
                 x0[i] = xn[i];
-            }  
+            }
         told = t0;
         hold = h;
         t0 = t0 + h;
         istep++;
         if (printout) outputSolution(istep, t0, x0, h, printout); // For output of the approximate solution
-		h = hnew;  // For next step, just use the stepsize based on the error estimate 
+		h = hnew;  // For next step, just use the stepsize based on the error estimate
 	} else {       // Otherwise, the step is rejected, so set new stepsize and retry
                 if (printout) printf(" Step was rejected, est was: %10.2e \n", est);
                 h = hnew;
 	    rstep++;
-		if (printout) printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %10.2e\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5] est);
+		if (printout) printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %10.2e\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5], est);
 	}
         if ((t0 + hnew) > tf) h = tf - t0;
 } // End of main loop
 return;
 }
-//  int _tmain(int argc, _TCHAR* argv[]) {         //  Only for Microsoft Visual C++
-  int main() {                                 //  For most other C compilers
-//  The main procedure 
-//  Set the initial conditions and stepsize 
-double t0;    // Initial t value
-double tf;    // Final   t value
-double x0[6]; // Initial x values
-double h;     // An initial guess for the stepsize to try
-double hmax;  // A maximum stepsize (in case error estimate is near zero)
-double tol;   // A tolerance for the size of the local truncation error
-double error; // The global error
-int    printout = 2;  // To control when outputSolution() is called from within rk1210 
-int    fixedstep = 0; // To control whether fixed step integration is desired (0 for variable step)
-double ecc;
-
-    t0 = 0.0;
-    tf = 2 * 6.283185307179586476925286766559005768394;  // tf is set to 4 Pi
-    ecc = 0.2;
-    neqns = 6;
-    x0[0] = 1.0;   //  Initial conditions
-    x0[1] = ecc; 
-    x0[2] = 0.0;
-    x0[3] = sqrt(1.0 - ecc*ecc);
-    x0[4] = 0.0;
-    x0[5] = 0.0;
-    h = 0.25;      //  An initial guess or setting for the stepsize, h
-    hmax = 1.0;  
-    tol = 1.0e-10;
-    rk1210(t0, tf, x0, h, hmax, tol, printout, fixedstep);
-    //   Now just measure global error based upon knowledge of exact solution at tf, etc.
-    error = sqrt((x0[0]-1.0)*(x0[0]-1.0) + (x0[1]-ecc)*(x0[1]-ecc) + (x0[2] * x0[2]) + 
-			 (x0[3]-sqrt(1.0 - ecc*ecc)) * (x0[3]-sqrt(1.0 - ecc*ecc)));
-    printf("\n Global error: %10.5e and -log(error):  %15.5lf\n", error, -log10(error));
-    printf(" Number of function evaluations: %d  and log(nfe): %8.5lf\n", nfe, log10((double)nfe)); 
-    printf(" Number of rejected steps: %d\n", rstep);
-    //char chr = getchar();  // To keep window visible on a Windows system
-    return 0;
-}
-
-
