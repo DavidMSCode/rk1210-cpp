@@ -65,7 +65,7 @@ void rk1210(double t0, double tf, double x0[], double h, double hmax, double tol
 //             If value is 2, interpolation is possible and valid and results can be printed
 //             for values of t within the last step taken; must invoke interpolate() subprogram
 //             in order for interpolation to occur; interpolated values are of seventh-order
-void outputSolution(int istep, double t0, double x0[], int neqnsIn, double h, int printout);
+void outputSolution(int istep, double t0, double x0[], double h, int printout);
 
 // t:          The value of the independent variable where you want an approximate, interpolated value
 // xt:         The approximate, interpolated value of x (the order of the approximation is seven)

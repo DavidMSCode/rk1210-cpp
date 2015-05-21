@@ -4,6 +4,7 @@
 //#include "stdafx.h"   //  Only for Microsoft Visual C++
 #include "stdio.h" //  For most other C compilers
 #include "math.h"
+#include "rk1210.h"
 #define EPS  1.0e-14  //  Epsilon, a nearly zero value   (a machine dependent constant)
 //  If your problem has more than 10 differential equations, then you will need to increase
 //  MAXEQNS to be as great or greater than that number
@@ -25,12 +26,16 @@ void deriv(double x[], double t, double f[]) {
 	double r3;
 	r3 = sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 	r3 = r3 * r3 * r3;
-	f[0] = x[1];
-	f[1] = -x[0] / r3;
-	f[2] = x[3];
-	f[3] = -x[2] / r3;
-	f[4] = x[5];
-	f[5] = -x[4] / r3;
+	f[0] = x[3];
+	f[1] = x[4];
+	f[2] = x[5];
+
+	f[3] = MU*(-x[0] / r3);
+	f[4] = MU*(-x[1] / r3);
+	f[5] = MU*(-x[2] / r3);
+
+
+
 	nfe++;     //  Increment the total number of derivative function evaluations
 return;
 }
