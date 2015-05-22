@@ -32,7 +32,7 @@ void deriv(double x[], double t, double f[]) {
 	f[1] = x[4];
 	f[2] = x[5];
 
-	EGM2008( x,  &f[3], 2);
+	EGM2008( x,  &f[3], 40);
 
 	nfe++;     //  Increment the total number of derivative function evaluations
 return;
