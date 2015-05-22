@@ -4,6 +4,7 @@
 //#include "stdafx.h"   //  Only for Microsoft Visual C++
 #include "stdio.h" //  For most other C compilers
 #include "math.h"
+#include "string.h"
 #include "rk1210.h"
 #define EPS  1.0e-14  //  Epsilon, a nearly zero value   (a machine dependent constant)
 //  If your problem has more than 10 differential equations, then you will need to increase
@@ -31,7 +32,7 @@ void deriv(double x[], double t, double f[]) {
 	f[1] = x[4];
 	f[2] = x[5];
 
-	EGM2008( x,  &f[3], 40);
+	EGM2008( x,  &f[3], 2);
 
 	nfe++;     //  Increment the total number of derivative function evaluations
 return;
@@ -97,55 +98,8 @@ int i;
 return 0;  // return 0 to indicate no error was detected
 }
 
-void outputSolution(int istep, double t0, double x0[], double h, int printout) {
-// This subprogram is called at the beginning of the integration and at the end of each step
-// User should construct this subprogram to make certain it handles desired kind of output
-// istep:      The number of successful steps taken so far
-// t0:         The value of t at the end of the step just taken
-// x0:         The value of x at the end of the step just taken, a twelfth-order result
-// h:          The size of the step just taken
-// printout:   If value is zero, this subprogram will not even be invoked
-//             If value is 1, one could just include code to printout values at end of each step
-//             If interpolation is desired, the value of printout should be 2
-//             If value is 2, interpolation is possible and valid and results can be printed
-//             for values of t within the last step taken; must invoke interpolate() subprogram
-//             in order for interpolation to occur; interpolated values are of seventh-order
-//
-static double tv = 0.0;  // Initialize the t value (for interpolated values below)
-double xv[MAXEQNS];   // Some local variables to store t and x values (needed by almost everyone)
-double mystep = 0.1;      // Only needed for this particular example (to printout results every 0.1 in t)
-// For this example of the use of outputSolution, we print a header first
-    if (istep == 0) {
-	    printf("\n Step  t0     x0[0]     x0[1]     x0[2]     x0[3]  x 0[4]     x0[5] \n");
-	    printf(" --------------------------------------------------------------\n");
-        //  Then we print the initial values for the problem
-	    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf\n", 0, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5]);
-        return;
-    }
-// For printout value of 1, just printout the results at the end of the step
-    if (printout == 1) {
-        printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5]);
-        return;
-    }
-// When printout is two, we can use interpolate to get intermediate values for x and print those values
-    if (printout == 2) {
-        //  For example, we can printout x values for evenly spaced values of t (every mystep)
-        while (tv <= t0) {
-            if ((tv > t0-h) && (tv < t0)) {  //  If tv, the value of t, is within the step just taken, then:
-                // Invoke interpolate() and see if all went well for the interpolation
-                if (interpolate(istep, tv, xv)) printf(" error in interpolate() \n");
-				printf(" %2d {%6.2lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf, %9.5lf}, \n", istep, tv, xv[0], xv[1], xv[2], xv[3], xv[4], xv[5]);
-            } else {
-                if (tv == t0) {  //  Just use the results, x0[]  -- pretty unlikely to get here, but just in case
-                    printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5]);
-                }
-            }
-            tv = tv + mystep;
-        }  // End of the while loop
-    }
-}
-
-void rk1210(double t0, double tf, double x0[], double h, double hmax, double tol, int printout, int fixedstep) {
+void rk1210(double t0, double tf, double * dt, double x0[], double h, double hmax,
+ 							double tol, int printout, int fixedstep, double * output) {
 // This procedure performs an integration of the differential equations given in procedure "deriv"
 //             using a variable-step Runge-Kutta method known as RK12(10) developed by T. Feagin in 2006
 //             The input and output variables are described below:
@@ -159,7 +113,7 @@ void rk1210(double t0, double tf, double x0[], double h, double hmax, double tol
 //             If printout is two, outputSolution() will be able to call interpolate() to get intermediate values
 // fixedstep:  Set to one if fixed step integration is desired, otherwise zero
 
-int i, istep;
+int i, istep, outstep;
 double xn[MAXEQNS];
 double x1[MAXEQNS],   x2[MAXEQNS], x3[MAXEQNS],  x4[MAXEQNS],  x5[MAXEQNS],  x6[MAXEQNS], x7[MAXEQNS];
 double x8[MAXEQNS],   x9[MAXEQNS], x10[MAXEQNS], x11[MAXEQNS], x12[MAXEQNS], x13[MAXEQNS];
@@ -177,7 +131,8 @@ tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 
 istep = 0;  // Set number of steps taken so far to zero
 rstep = 0;  // Set number of rejected steps to zero
-if (printout) outputSolution(istep, t0, x0, h, printout);
+outstep = 0;  // Set output counter to zero
+
 //  While not finished, take another step
 while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
     deriv(x0 , t0, f0);   // This could be coded more efficiently for rejected steps if desired
@@ -469,15 +424,31 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
         hold = h;
         t0 = t0 + h;
         istep++;
-        if (printout) outputSolution(istep, t0, x0, h, printout); // For output of the approximate solution
+				while (dt[outstep] < t0){
+					if (dt[outstep] == told){
+						memcpy((void*)&output[neqns*outstep],(void*)xold,neqns*sizeof(double));
+					}else{
+						if (interpolate(istep, dt[outstep], &output[neqns*outstep])){
+							 printf(" error in interpolate()\noutstep: %i \tt: %f\n",outstep,dt[outstep]);
+
+						}
+					}
+					outstep++;
+					if(dt[outstep] == t0){
+						memcpy((void*)&output[neqns*outstep],(void*)x0,neqns*sizeof(double));
+						if (dt[outstep] == tf) return;
+						outstep++;
+					}
+
+				}
+
 		h = hnew;  // For next step, just use the stepsize based on the error estimate
 	} else {       // Otherwise, the step is rejected, so set new stepsize and retry
-                if (printout) printf(" Step was rejected, est was: %10.2e \n", est);
+                if (printout == 1) printf(" Step was rejected, est was: %10.2e \n", est);
                 h = hnew;
 	    rstep++;
-		if (printout) printf(" %2d %6.2lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %10.2e\n", istep, t0, x0[0], x0[1], x0[2], x0[3], x0[4], x0[5], est);
 	}
-        if ((t0 + hnew) > tf) h = tf - t0;
+  if ((t0 + hnew) > tf) h = tf - t0;
 } // End of main loop
 return;
 }

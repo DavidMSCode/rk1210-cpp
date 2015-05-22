@@ -25,6 +25,7 @@ int main() {                                 //  For most other C compilers
 //  Set the initial conditions and stepsize
 double t0;    // Initial t value
 double tf;    // Final   t value
+double dt;    // Output time step
 double x0[6] = { -464.856 , 7667.880 , 574.231 , 2.8381186 , -0.7871898 , 7.0830275 };; // Initial x values
 double h;     // An initial guess for the stepsize to try
 double hmax;  // A maximum stepsize (in case error estimate is near zero)
@@ -32,13 +33,45 @@ double tol;   // A tolerance for the size of the local truncation error
 double error; // The global error
 int    printout = 2;  // To control when outputSolution() is called from within rk1210
 int    fixedstep = 0; // To control whether fixed step integration is desired (0 for variable step)
+double * output;
+double * dtVec;
+int states,ii,jj,numPoints;
+
 
     t0 = 0.0;
-    tf = 2 * 6.283185307179586476925286766559005768394;  // tf is set to 4 Pi
-    h = 0.25;      //  An initial guess or setting for the stepsize, h
-    hmax = 1.0;
+    tf = 3600;  // tf is set to 4 Pi
+    dt = 6;
+    h = 10;      //  An initial guess or setting for the stepsize, h
+    hmax = 60;
     tol = 1.0e-10;
-    rk1210(t0, tf, x0, h, hmax, tol, printout, fixedstep);
+    states = 6;
+
+    numPoints = ceil((tf-t0)/dt)+1;
+    dtVec = (double*)malloc ((numPoints+1)*sizeof(double));
+
+    dtVec[0] = t0;
+    for (ii = 1; ii<numPoints-1; ii++){
+      dtVec[ii] = dtVec[ii-1]+dt;
+    }
+    dtVec[numPoints-1] = tf;
+
+    output = (double*)malloc ((states*numPoints+1)*sizeof(double));
+
+    rk1210(t0, tf, dtVec, x0, h, hmax, tol, printout, fixedstep, output);
+
+        if (FILEOUT == 1){
+          fID = fopen((const char*)"./rk1210Out.txt",(const char*)"w");
+          double nextTime = t0;
+          for (ii = 0; ii<numPoints; ii++){
+            fprintf(fID,"%1.16E\t", dtVec[ii]);
+            for ( jj=0; jj<states; jj++ ) {
+                fprintf(fID,"%1.16E\t", output[states*ii+jj]);
+            }
+            fprintf(fID,"\n");
+          }
+
+          fclose(fID);
+        }
 
     return 0;
 }
