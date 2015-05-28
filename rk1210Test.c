@@ -39,8 +39,8 @@ int states,ii,jj,numPoints;
 
 
     t0 = 0.0;
-    tf = 3600;  // tf is set to 4 Pi
-    dt = 6;
+    tf = -3600;
+    dt = -6;
     h = 10;      //  An initial guess or setting for the stepsize, h
     hmax = 60;
     tol = 1.0e-10;
@@ -57,7 +57,7 @@ int states,ii,jj,numPoints;
 
     output = (double*)malloc ((states*numPoints+1)*sizeof(double));
 
-    rk1210(t0, tf, dtVec, x0, h, hmax, tol, printout, fixedstep, output);
+    rk1210(t0, tf, dtVec, x0, -h, -hmax, tol, printout, fixedstep, output);
 
         if (FILEOUT == 1){
           fID = fopen((const char*)"./rk1210Out.txt",(const char*)"w");
@@ -72,6 +72,9 @@ int states,ii,jj,numPoints;
 
           fclose(fID);
         }
+
+
+
 
     return 0;
 }

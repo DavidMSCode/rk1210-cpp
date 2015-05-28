@@ -13,6 +13,7 @@
 //  The global variables are:
 int nfe = 0;          //  The total number of function evaluations
 int rstep = 0;        //  The total number of rejected steps
+int backprop = 0;     //  Backwards or forward integration
 double hold, told, xold[MAXEQNS]; //  The old h, t, and x valueshold
 //  The v1[] ... v7[] arrays store the terms used to interpolate the intermediate solution values
 double v1[MAXEQNS], v2[MAXEQNS], v3[MAXEQNS], v4[MAXEQNS], v5[MAXEQNS], v6[MAXEQNS], v7[MAXEQNS];
@@ -46,7 +47,7 @@ int interpolate(int istep, double t, double xt[]) {
 static int laststep = -1; // To keep track of last istep value
 double u;
 int i;
-    if ((t < told) || (t > told + hold)) {
+    if (backprop*(t - told) < 0.0 || backprop*(t - (told + hold)) > 0.0) {
         printf(" interpolate called with invalid t value: %lf , should have been in interval [%lf,%lf]\n", t, told, told + hold);
         return 1;  // return 1 to indicate an error was detected
     }
@@ -124,7 +125,7 @@ double f8[MAXEQNS],   f9[MAXEQNS], f10[MAXEQNS], f11[MAXEQNS];
 double f17[MAXEQNS], f18[MAXEQNS], f19[MAXEQNS];
 double f20[MAXEQNS], f21[MAXEQNS], f22[MAXEQNS], f23[MAXEQNS];
 double error,  tol10;
-double sqrtfs, difffs, est, hnew, tstep;
+double sqrtfs, difffs, est, hnew, tstep, tspan;
 
 tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 //  For fewer rejected steps, could change to:   "tol10 = 0.05 * tol;"  for example
@@ -133,9 +134,14 @@ istep = 0;  // Set number of steps taken so far to zero
 rstep = 0;  // Set number of rejected steps to zero
 outstep = 0;  // Set output counter to zero
 
+tspan = tf - t0;
+backprop = 1;
+if (tspan<0.0)
+	backprop = -1;
+
 
 //  While not finished, take another step
-while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
+while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step taken
     deriv(x0 , t0, f0);   // This could be coded more efficiently for rejected steps if desired
     for (i = 0; i < neqns; i++) {
         x1[i] = x0[i] + h * (0.20000000000000000000000000000000000000000000000000000000000 * f0[i]);
@@ -425,7 +431,7 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
         hold = h;
         t0 = t0 + h;
         istep++;
-				while (dt[outstep] < t0){
+				while (backprop*dt[outstep] < backprop*t0){
 					if (dt[outstep] == told){
 						memcpy((void*)&output[neqns*outstep],(void*)xold,neqns*sizeof(double));
 					}else{
@@ -449,7 +455,7 @@ while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
                 h = hnew;
 	    rstep++;
 	}
-  if ((t0 + hnew) > tf) h = tf - t0;
+  if (backprop*(t0 + hnew) > backprop*tf) h = tf - t0;
 } // End of main loop
 return;
 }
