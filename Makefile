@@ -10,9 +10,17 @@
 RK1210_PATH = ./
 EGM_PATH = ../egm2008_c/
 INC = -I$(RK1210_PATH) -I$(EGM_PATH)
-LINK = -lm -lrt
+LINK = -lm
 OPTS =  -g -ffloat-store -std=c99
 COMP = gcc
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	LINK += -lrt
+endif
+ifeq ($(UNAME_S),Darwin)
+	LINK +=
+endif
 
 # BUILD ALL THE THINGS
 all: grav rk1210_obj dr

@@ -124,7 +124,7 @@ double f8[MAXEQNS],   f9[MAXEQNS], f10[MAXEQNS], f11[MAXEQNS];
 double f17[MAXEQNS], f18[MAXEQNS], f19[MAXEQNS];
 double f20[MAXEQNS], f21[MAXEQNS], f22[MAXEQNS], f23[MAXEQNS];
 double error,  tol10;
-double sqrtfs, difffs, est, hnew;
+double sqrtfs, difffs, est, hnew, tstep;
 
 tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 //  For fewer rejected steps, could change to:   "tol10 = 0.05 * tol;"  for example
@@ -132,6 +132,7 @@ tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 istep = 0;  // Set number of steps taken so far to zero
 rstep = 0;  // Set number of rejected steps to zero
 outstep = 0;  // Set output counter to zero
+
 
 //  While not finished, take another step
 while (t0 < tf - EPS)  {  // The main loop - executed for each step taken
