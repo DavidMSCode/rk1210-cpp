@@ -32,15 +32,17 @@ double hmax;  // A maximum stepsize (in case error estimate is near zero)
 double tol;   // A tolerance for the size of the local truncation error
 double error; // The global error
 int    printout = 2;  // To control when outputSolution() is called from within rk1210
-int    fixedstep = 0; // To control whether fixed step integration is desired (0 for variable step)
+int    fixedstep = 1; // To control whether fixed step integration is desired (0 for variable step)
 double * output;
 double * dtVec;
 int states,ii,jj,numPoints;
 
 
     t0 = 0.0;
-    tf = -3600;
-    dt = -6;
+    tf = 605;
+    dt = 6.0;
+    // tf = -3600;
+    // dt = -6;
     h = 10;      //  An initial guess or setting for the stepsize, h
     hmax = 60;
     tol = 1.0e-10;
@@ -57,7 +59,8 @@ int states,ii,jj,numPoints;
 
     output = (double*)malloc ((states*numPoints+1)*sizeof(double));
 
-    rk1210(t0, tf, dtVec, x0, -h, -hmax, tol, printout, fixedstep, output);
+    rk1210(t0, tf, dtVec, x0, h, hmax, tol, printout, fixedstep, output);
+    // rk1210(t0, tf, dtVec, x0, -h, -hmax, tol, printout, fixedstep, output);
 
         if (FILEOUT == 1){
           fID = fopen((const char*)"./rk1210Out.txt",(const char*)"w");
