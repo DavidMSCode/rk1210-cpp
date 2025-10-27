@@ -1,0 +1,30 @@
+# OS
+.DS_Store
+
+# Build artifacts
+build/
+cmake-build*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+Makefile
+*.ninja
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Generated outputs
+rk1210Out.txt
+test
+test.dSYM/
+
+# IDE/editor
+.vscode/
+.idea/
+.clangd/
+.cache/
