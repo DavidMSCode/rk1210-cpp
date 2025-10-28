@@ -128,8 +128,7 @@ int main(int argc, char* argv[]) {
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "Integration with deriv completed in " << elapsed.count() << " seconds.\n";
     auto start2 = std::chrono::high_resolution_clock::now();
-    rk1210(t0, tf, dt, nout, x0_vec, h, hmax, tol, printout, fixedstep,
-               custom_ode_wrapper, output);
+    rk1210(t0, tf, dt, nout, x0_vec, h, hmax, tol, printout, fixedstep, custom_ode_wrapper, output);
     auto end2 = std::chrono::high_resolution_clock::now();
     elapsed = end2 - start2;
     std::cout << "Integration with odeFunc completed in " << elapsed.count() << " seconds.\n";
