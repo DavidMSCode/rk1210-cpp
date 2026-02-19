@@ -57,7 +57,7 @@ const int neqns = 6; // The number of differential equations being integrated
 // }
 
 void rk1210(double t0, double tf, double * dt, int nout, double x0[], double h, double hmax,
-                                    double tol, int printout, int fixedstep, derivFunc deriv, double * output) {
+                                    double tol, int printout, int fixedstep, derivFunc deriv, double * output, int * fevals) {
 // This procedure performs an integration of the differential equations given in procedure "deriv"
 //             using a variable-step Runge-Kutta method known as RK12(10) developed by T. Feagin in 2006
 //             The input and output variables are described below:
@@ -70,7 +70,6 @@ void rk1210(double t0, double tf, double * dt, int nout, double x0[], double h, 
 // printout:   Set to one or two if call to outputSolution() from within rk1210 is desired, otherwise zero
 //             If printout is two, outputSolution() will be able to call interpolate() to get intermediate values
 // fixedstep:  Set to one if fixed step integration is desired, otherwise zero
-
 int i, istep, outstep;
 double xn[MAXEQNS];
 double x1[MAXEQNS],   x2[MAXEQNS], x3[MAXEQNS],  x4[MAXEQNS],  x5[MAXEQNS],  x6[MAXEQNS], x7[MAXEQNS];
@@ -90,6 +89,7 @@ tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 istep = 0;  // Set number of steps taken so far to zero
 rstep = 0;  // Set number of rejected steps to zero
 outstep = 0;  // Set output counter to zero
+*fevals = 0;  // Set function evaluation counter to zero
 
 tspan = tf - t0;
 backprop = 1;
@@ -365,6 +365,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
                            -  0.0234375 * f23[i]
                            +  0.02380952380952380952380952380952380952380952380952380952381 * f24[i]);
     }
+    *fevals += 25;  // We have performed 25 function evaluations in this step
 	//  Now, just prepare for the next step
 	sqrtfs = 0.0;
 	for (i = 0; i < neqns; i++) {
@@ -434,7 +435,7 @@ return;
 }
 
 void rk1210(double t0, double tf, double * dt, int nout, std::vector<double>& x0, double h, double hmax,
-                                    double tol, int printout, int fixedstep, vecFunc deriv, double * output) {
+                                    double tol, int printout, int fixedstep, vecFunc deriv, double * output, int* fevals) {
 // This procedure performs an integration of the differential equations given in procedure "deriv"
 //             using a variable-step Runge-Kutta method known as RK12(10) developed by T. Feagin in 2006
 //             The input and output variables are described below:
@@ -469,6 +470,7 @@ tol10 = 0.1 * tol;  //  Ask for accuracy of tol/10 at each step
 istep = 0;  // Set number of steps taken so far to zero
 rstep = 0;  // Set number of rejected steps to zero
 outstep = 0;  // Set output counter to zero
+*fevals = 0;  // Set function evaluation counter to zero
 
 tspan = tf - t0;
 backprop = 1;
@@ -478,7 +480,7 @@ if (tspan<0.0)
 
 //  While not finished, take another step
 while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step taken
-    deriv(x0 , t0, f0);   // This could be coded more efficiently for rejected steps if desired
+    deriv(x0 , t0, f0);   
     for (i = 0; i < neqns; i++) {
         x1[i] = x0[i] + h * (0.20000000000000000000000000000000000000000000000000000000000 * f0[i]);
     }
@@ -744,6 +746,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
                            -  0.0234375 * f23[i]
                            +  0.02380952380952380952380952380952380952380952380952380952381 * f24[i]);
     }
+    *fevals+= 25;  // We have performed 25 function evaluations in this step
 	//  Now, just prepare for the next step
 	sqrtfs = 0.0;
 	for (i = 0; i < neqns; i++) {

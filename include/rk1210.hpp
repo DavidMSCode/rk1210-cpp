@@ -46,12 +46,12 @@ typedef void (*derivFunc)(double[], double, double[]);
 // fixedstep:  Set to one if fixed step integration is desired, otherwise zero
 // nout: number of entries in the dt array (number of requested output times)
 void rk1210(double t0, double tf, double * dt, int nout, double x0[], double h, double hmax,
-double tol, int printout, int fixedstep, derivFunc deriv, double * output);
+double tol, int printout, int fixedstep, derivFunc deriv, double * output, int * fevals);
 
-void rk1210(double t0, double tf, double *dt, int nout, std::vector<double> &x0, double h, double hmax, double tol, int printout, int fixedstep, vecFunc deriv, double *output);
+void rk1210(double t0, double tf, double *dt, int nout, std::vector<double> &x0, double h, double hmax, double tol, int printout, int fixedstep, vecFunc deriv, double *output, int *fevals);
 
 void rk1210(double t0, double tf, double * dt, int nout, double x0[], double h, double hmax,
-double tol, int printout, int fixedstep, vecFunc deriv, double * output);
+double tol, int printout, int fixedstep, vecFunc deriv, double * output, int *fevals);
 
 //converts the ode function to the form needed by rk1210
 void deriv_custom(double x[], double t, double f[], vecFunc odeFunc);
