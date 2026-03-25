@@ -105,8 +105,8 @@ int main(int argc, char* argv[]) {
     double t0 = 0.0;          // Initial time
     double tf = 24*3600;         // Final time
     double h = 0.1;           // Initial step size
-    double hmax = 0.5;        // Maximum step size
-    double tol = 1e-6;        // Tolerance for local truncation error
+    double hmax = 100;        // Maximum step size
+    double tol = 1e-14;        // Tolerance for local truncation error
     int printout = 0;         // No intermediate output
     int fixedstep = 0;        // Variable step size
 
@@ -123,15 +123,21 @@ int main(int argc, char* argv[]) {
 
     const int nout = maxSteps;
     auto start = std::chrono::high_resolution_clock::now();
-    rk1210(t0, tf, dt, nout, x0, h, hmax, tol, printout, fixedstep, deriv, output1);
+    int fevals1 = 0;
+    rk1210(t0, tf, dt, nout, x0, h, hmax, tol, printout, fixedstep, deriv, output1, &fevals1);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "Integration with deriv completed in " << elapsed.count() << " seconds.\n";
+        //print nfe
+    std::cout << "Number of function evaluations: " << fevals1 << "\n";
     auto start2 = std::chrono::high_resolution_clock::now();
-    rk1210(t0, tf, dt, nout, x0_vec, h, hmax, tol, printout, fixedstep, custom_ode_wrapper, output);
+    int fevals2 = 0;
+    rk1210(t0, tf, dt, nout, x0_vec, h, hmax, tol, printout, fixedstep, custom_ode_wrapper, output, &fevals2);
     auto end2 = std::chrono::high_resolution_clock::now();
     elapsed = end2 - start2;
     std::cout << "Integration with odeFunc completed in " << elapsed.count() << " seconds.\n";
+        //print nfe
+    std::cout << "Number of function evaluations: " << fevals2 << "\n";
     // Print final state
     std::cout << "Final state at t = " << tf << ":\n";
     for (int i = 0; i < neqns; ++i) {
@@ -151,7 +157,6 @@ int main(int argc, char* argv[]) {
     //
     std::cout << "Output written to rk1210Out.txt\n";
 
-    //print nfe
-    std::cout << "Number of function evaluations: " << nfe << "\n";
+
     return 0;
 }

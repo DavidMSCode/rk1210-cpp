@@ -397,7 +397,8 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
                 while (outstep < nout && backprop*(dt[outstep] - t0) < -EPS) {
                     if (fabs(dt[outstep] - told) < EPS) {
                         memcpy((void*)&output[neqns*outstep], (void*)xold, neqns*sizeof(double));
-                    } else {
+                    } 
+                    else {
                         if (interpolate(istep, dt[outstep], &output[neqns*outstep], hold, told, xold,
                                         f0, f12, f13, f14, f15, f16, f24)){
                             printf(" error in interpolate()\noutstep: %i \tt: %f\n", outstep, dt[outstep]);
@@ -781,7 +782,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
                     } else {
                         if (interpolate(istep, dt[outstep], &output[neqns*outstep], hold, told, xold,
                                         f0, f12, f13, f14, f15, f16, f24)){
-                            printf(" error in interpolate()\noutstep: %i \tt: %f\n", outstep, dt[outstep]);
+                            printf("error in interpolate()\noutstep: %i \tt: %f\n", outstep, dt[outstep]);
                         }
                     }
                     outstep++;
@@ -796,7 +797,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
 
 		h = hnew;  // For next step, just use the stepsize based on the error estimate
 	} else {       // Otherwise, the step is rejected, so set new stepsize and retry
-                        printf(" error in interpolate()\noutstep: %i \tt: %f\n", outstep, dt[outstep]);
+                if (printout == 1) printf(" Step was rejected, est was: %10.2e t: %10.2e \n", est, t0);
                 h = hnew;
 	    rstep++;
 	}
