@@ -374,10 +374,11 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
 	}
 	sqrtfs = sqrt(sqrtfs);
 	est = 0.07656250000000000 * h * sqrtfs;  // An estimate of the norm of the LTE
-	if (est < EPS) {  // If error estimate is almost zero, then set hnew to maximum stepsize
+	if (est < tol/100 && est < EPS) {  // If error estimate is almost zero, then set hnew to maximum stepsize
 			hnew = hmax;
 		} else {
-			hnew = h * pow(tol10 / est, 0.0909090909090909);  // Stepsize based on the error estimate
+            double scalefac = pow(tol10 / est, 0.0909090909090909);
+			hnew = h * scalefac;  // Stepsize based on the error estimate
 		}
 	if (fixedstep) hnew = h;          // If performing fixed step integration, just keep same stepsize
 	if ((est <= tol) || fixedstep) {  // Step successful, so update numerical solution, t0, istep, and print
@@ -414,7 +415,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
 
 		h = hnew;  // For next step, just use the stepsize based on the error estimate
 	} else {       // Otherwise, the step is rejected, so set new stepsize and retry
-                if (printout == 1) printf(" Step was rejected, est was: %10.2e \n", est);
+                if (printout == 1) printf(" Step was rejected, est was: %10.2e t: %10.2e \n", est, t0);
                 h = hnew;
 	    rstep++;
 	}
@@ -755,7 +756,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
 	}
 	sqrtfs = sqrt(sqrtfs);
 	est = 0.07656250000000000 * h * sqrtfs;  // An estimate of the norm of the LTE
-	if (est < EPS) {  // If error estimate is almost zero, then set hnew to maximum stepsize
+	if (est < tol/100 && est < EPS) {  // If error estimate is almost zero, then set hnew to maximum stepsize
 			hnew = hmax;
 		} else {
 			hnew = h * pow(tol10 / est, 0.0909090909090909);  // Stepsize based on the error estimate
@@ -795,7 +796,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
 
 		h = hnew;  // For next step, just use the stepsize based on the error estimate
 	} else {       // Otherwise, the step is rejected, so set new stepsize and retry
-                if (printout == 1) printf(" Step was rejected, est was: %10.2e \n", est);
+                        printf(" error in interpolate()\noutstep: %i \tt: %f\n", outstep, dt[outstep]);
                 h = hnew;
 	    rstep++;
 	}
