@@ -756,7 +756,7 @@ while ( fabs( tf - t0 ) > EPS)  {  // The main loop - executed for each step tak
 		sqrtfs += difffs * difffs;
 	}
 	sqrtfs = sqrt(sqrtfs);
-	est = 0.07656250000000000 * h * sqrtfs;  // An estimate of the norm of the LTE
+	est = 0.07656250000000000 * std::abs(h) * sqrtfs;  // An estimate of the norm of the LTE
 	if (est < tol/100 && est < EPS) {  // If error estimate is almost zero, then set hnew to maximum stepsize
 			hnew = hmax;
 		} else {
